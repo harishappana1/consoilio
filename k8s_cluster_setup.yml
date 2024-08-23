@@ -1,0 +1,49 @@
+- name: Set up AKS Kubernetes Cluster
+  hosts: localhost
+  connection: local
+  vars:
+    resource_group: k8srg
+    location: eastus
+    aks_name: myAKSCluster
+    username: azureuser
+    ssh_key: "your-ssh-public-key"
+    client_id: "your-client-id"
+    client_secret: "your-client-secret"
+    aks_version: "your-aks-version"
+  tasks:
+  - name: Create resource group
+    azure_rm_resourcegroup:
+      name: "{{ resource_group }}"
+      location: "{{ location }}"
+  
+  - name: Create a managed Azure Kubernetes Service (AKS) cluster
+    azure_rm_aks:
+      name: "{{ aks_name }}"
+      location: "{{ location }}"
+      resource_group: "{{ resource_group }}"
+      dns_prefix: "{{ aks_name }}"
+      kubernetes_version: "{{ aks_version }}"
+      linux_profile:
+        admin_username: "{{ username }}"
+        ssh_key: "{{ ssh_key }}"
+      service_principal:
+        client_id: "{{ client_id }}"
+        client_secret: "{{ client_secret }}"
+      agent_pool_profiles:
+        - name: webapp
+          count: 1
+          vm_size: Standard_D2_v2
+          enable_auto_scaling: yes
+          min_count: 1
+          max_count: 3
+        - name: gpu
+          count: 0
+          vm_size: Standard_NC16ads_A10_v4
+          os_type: Linux
+          enable_auto_scaling: yes
+          min_count: 0
+          max_count: 2
+          node_labels:
+            usage: gpu
+      tags:
+        Environment: Production

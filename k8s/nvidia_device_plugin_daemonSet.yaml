@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+  labels:
+    k8s-app: nvidia-device-plugin
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - image: nvidia/k8s-device-plugin:1.0.0-beta7
+        name: nvidia-device-plugin-ctr
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+        volumeMounts:
+          - mountPath: /var/lib/kubelet/device-plugins
+            name: device-plugin
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
